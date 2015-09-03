@@ -22,10 +22,7 @@ namespace Steganography_Kevin
         }
 
         //EXIT TOOL STRIP CLICK (30-7-15)
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            Application.Exit();
-        }
+        
 
         //ABOUT STEGANOGRAPHY TOOL STRIP CLICK (30-7-15)
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
@@ -62,6 +59,7 @@ namespace Steganography_Kevin
             if (loadImage.ShowDialog() == DialogResult.OK)
             {
                 pictureBox_Preview.Image = Image.FromFile(loadImage.FileName);
+                lbl_msgText.Text = "Image file loaded successfully!";
             }
         }
 
@@ -75,6 +73,7 @@ namespace Steganography_Kevin
             if (loadText.ShowDialog() == DialogResult.OK)
             {
                 txt_Plaintext.Text = File.ReadAllText(loadText.FileName);
+                lbl_msgText.Text = "Text file loaded succesfully!";
             }
         }
 
@@ -105,9 +104,9 @@ namespace Steganography_Kevin
                     lbl_msgText.ForeColor = Color.Green;
                 }
             }
-            catch (Exception excep)
+            catch (Exception)
             {
-                MessageBox.Show("Program Error!"+Environment.NewLine+""+Environment.NewLine+"Error Details: "+excep,"Fatal Program Error!");
+                MessageBox.Show("Program Error!"+Environment.NewLine+""+Environment.NewLine+"You can't save an image without embedding data into it!","Warning!");
             }
         }
 
@@ -120,7 +119,81 @@ namespace Steganography_Kevin
             if (save_dialog.ShowDialog() == DialogResult.OK)
             {
                 File.WriteAllText(save_dialog.FileName, txt_Plaintext.Text);
+                lbl_msgText.Text = "Text file saved successfully!";
             }
+            else
+            {
+                lbl_msgText.Text = "Text file not saved!";
+            }
+        }
+
+ 
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
+        private void openEmailClientToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var mail = new Form_EmailClient();
+            mail.Show();
+        }
+
+        private void openWebBrowserToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var web_Browser = new Form_WebBrowser();
+            web_Browser.Show();
+
+        }
+
+        //EMBED DATA BUTTON CLICK
+        private void btn_embedData_Click(object sender, EventArgs e)
+        {
+            bmp = (Bitmap)pictureBox_Preview.Image;
+            string text = txt_Plaintext.Text;
+            if (text.Equals(""))
+            {
+                MessageBox.Show("The text you want to embed cannot be empty!","Error!");
+                return;
+            }
+            if (chk_enableEncryption.Checked)
+            {
+                if (txt_Password.Text.Length < 5)
+                {
+                    MessageBox.Show("The password length cannot be lesser than 5 characters!", "Error!");
+                    return;
+                }
+                else
+                {
+                    text = Crypto.EncryptStringAES(text, txt_Password.Text);
+                }
+            }
+            bmp = SteganographyHelper.embedText(text,bmp);
+            MessageBox.Show("Your text was successsfully embedded within the image!","Success!");
+            lbl_msgLable.Text = "";
+            lbl_msgLable.Text = "Data Embedded. Please save your image.";
+            lbl_msgLable.ForeColor = Color.OrangeRed;
+        }
+
+        //EXTRACT BUTTON CLICK
+        private void btn_extractData_Click(object sender, EventArgs e)
+        {
+            bmp = (Bitmap)pictureBox_Preview.Image;
+            string extractedText = SteganographyHelper.extractText(bmp);
+
+            if (chk_enableEncryption.Checked)
+            {
+                try
+                {
+                    extractedText = Crypto.DecryptStringAES(extractedText, txt_Password.Text);
+                }
+                catch
+                {
+                    MessageBox.Show("Password Invalid!","Error!");
+                    return;
+                }
+            }
+            txt_Plaintext.Text = extractedText;
         }
     }
 }
